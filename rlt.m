@@ -1,5 +1,5 @@
 %Instrumental Learning Task with Multiple Reversals
-%3/16/14 - TO wrote the script
+%3/16/14 - TO wrote the script.
 
 function rlt()
 
@@ -20,8 +20,6 @@ textcolor=WhiteIndex(wPtr);   % text color is white as screen background is set 
 
 %ACQUISITION
 selected = 0; %no stimuli selected by participant at start of trial
-prare = 0.3; %probability that trial type is rare
-trial = 0; %trial type set to zero at start of each trial
 % stimtime = 2000; % time allotted to select stimulus
 % rewardceiling = 15; %determines the largest taskobject number that can be used for reward values
 % rewardfloor = 5;  %determines the smallest taskobject number that can be used for reward values
@@ -42,52 +40,34 @@ key_pressed = cell(95,1);
 %make note of how much participant gains or loses during each trial
 RewardValue = cell(95,1);
 
-% if ~isfield(TrialRecord, 'RewardValue'),
-%     TrialRecord.RewardValue=[];
-% end
+reactionTime = cell(95,1);
 
-%Taskobjects are defined in the conditions (.txt) file.
-%Each participant will be assigned to condition 1 or 2 and will only view trials from the designated condition.
-%Taskobjects 1 and 3 are identical, but appear on different sides of the screen.
-%Taskobjects 2 and 4 are identical, but appear on different sides of the screen.
+gcsLocation = cell(95,1);  % this wil be either 'right' or 'left', representing the location of GCS & BCS in each trial. 
 
-%determine which taskobject will be ?Good CS?
-% GCS = 1; %Taskobject 1 is the GCS
-% img1 = GCS_image;
-% if rand(1) < 0.5
-%     GCS = 3; %The GCS will change spatial positioning on 50% of trials
-%     img2 = GCS_image;
-% end
-%
-% %Bad CS gets other number
-% BCS = 2; %BCS defaults to taskobject 2
-% img2 = BCS_image;
-% if GCS == 3
-%     BCS = 4; %if the GCS is on the right, BCS must switch to the left position
-%     img1 = BCS_image;
-% end
+bcsLocation = cell(95,1);
 
 
-
-% w = []; %may be unnecessary to define matrix
 for p = 1:20 %20 trials within acquisition session
-    
+    trial = 0;  %probability that trial type is normal
     fifty_prob = rand(1);
     if fifty_prob >= 0.5
         GCS = 'on left'; %Taskobject 1 is the GCS
+        gcsLocation{p,1} = 'Left';
+        bcsLocation{p,1} = 'Right';
         img1 = GCS_image;
         img2 = BCS_image;
     end
     if fifty_prob < 0.5
         GCS = 'on right'; %The GCS will change spatial positioning on 50% of trials
+        gcsLocation{p,1} = 'Right';
+        bcsLocation{p,1} = 'Left';
         img2 = GCS_image;
         img1 = BCS_image;
     end
     %determine trial type
-    if rand(1) < prare
+    if rand(1) < 0.3 %probability that trial type is rare
         trial = 1; %trial type set to rare
     end
-    %if trial type not set to rare, it defaults to normal (means trial = 0)
     
     %places fixation dot, stimuli, and choice instructions on screen
     
@@ -105,28 +85,8 @@ for p = 1:20 %20 trials within acquisition session
     [nx, ny, bbox] = DrawFormattedText(wPtr, '+',  w/2, h/2-h/15, textcolor);
     Screen('TextSize',wPtr, font_size);
     [nx, ny, bbox] = DrawFormattedText(wPtr, 'Please make a choice', 'center', 85*h/100, textcolor);
-    Screen('Flip',wPtr);
-    % toggleobject(fix);
-    % toggleobject(GCS);
-    % toggleobject (BCS);
-    % toggleobject (choiceinstructions);
-    % idle(2000); %instructions on screen for 2 seconds
-    % toggleobject(fix); %fixation dot leaves screen
-    % toggleobject (choiceinstructions); %instructions leave screen
-    % hotkey(z, selected == left) && hotkey(m, selected == right); %defines possible keyboard strokes
-    % idle(stimtime); %wait for participant?s choice
-    % clear hotkey %participant cannot choose after stimtime IMPORTANT NOTE: if participant selects button immediately, it still takes "stimtime" for outcome to appear
-    %
-    %check for errors
-    %     if selected == 0
-    %         then %WHAT HAPPENS DURING TRIAL ERROR?
-    %     end
-    %SHOULD AN ERROR OCCUR IF BOTH KEYS ARE PRESSED OR DEFAULT TO LAST SELECTED
-    %KEY?
-    
-    %check which key participant selected and position of stimuli to determine
-    %if good or bad stimulus was selected
-    
+    startTime = Screen('Flip',wPtr);
+
     while 1
         [secs, keyCode, deltaSecs] = KbWait;
         if keyCode(quitkey)
@@ -136,6 +96,7 @@ for p = 1:20 %20 trials within acquisition session
         end
         if keyCode(left_key)
             selected = 1;
+            reactionTime{p,1} = secs - startTime;
             Screen('DrawTexture', wPtr, t1, [], [w/2-300*w/1000, h/2-h/25-y/2, w/2-300*w/1000+x, h/2-h/25+y/2]);
             Screen('DrawTexture', wPtr, t2, [], [w/2+300*w/1000-x, h/2-h/25-y/2, w/2+300*w/1000, h/2-h/25+y/2]);
             Screen('TextSize',wPtr, font_size);
@@ -149,6 +110,7 @@ for p = 1:20 %20 trials within acquisition session
         end
         if keyCode(right_key)
             selected = 2;
+            reactionTime{p,1} = secs - startTime;
             Screen('DrawTexture', wPtr, t1, [], [w/2-300*w/1000, h/2-h/25-y/2, w/2-300*w/1000+x, h/2-h/25+y/2]);
             Screen('DrawTexture', wPtr, t2, [], [w/2+300*w/1000-x, h/2-h/25-y/2, w/2+300*w/1000, h/2-h/25+y/2]);
             Screen('TextSize',wPtr, font_size);
@@ -180,7 +142,7 @@ for p = 1:20 %20 trials within acquisition session
         %         toggleobject(rightselected);
     end
     
-    WaitSecs(2); %after 2 seconds, all stimuli leave screen
+    WaitSecs(0.1); %after 2 seconds, all stimuli leave screen
     %     toggleobject([GCS BCS leftselected rightselected], 'off')
     
     %check which stimulus is selected and the trial type (normal or rare) to
@@ -209,20 +171,18 @@ for p = 1:20 %20 trials within acquisition session
         [nx, ny, bbox] = DrawFormattedText(wPtr, 'WON $5', 'center', h/2-h/15, textcolor);
         RewardValue{p,1} = '5';
         Screen('Flip',wPtr);
-        %         toggleobject(reportwin);
     elseif strcmp(run,'loss')
         Screen('TextSize',wPtr, font_size);
         [nx, ny, bbox] = DrawFormattedText(wPtr, 'LOST $5', 'center', h/2-h/15, textcolor);
         RewardValue{p,1} = '-5';
         Screen('Flip',wPtr);
-        %         toggleobject(reportloss);
     end
     
     %     rewardval=randi([rewardfloor,rewardceiling]); %The value of the reward (or loss) is set to any number between "rewardfloor" and "rewardceiling"
     %     toggleobject(rewardval); %presents the reward value (or loss value) to the participant
     %     TrialRecord.RewardValue(end+1)=rewardval; %makes a note of the reward value for the experimenter
     
-    WaitSecs(2); %everything leaves screen after 2 seconds
+    WaitSecs(0.1); %everything leaves screen after 2 seconds
     %     toggleobject(rewardvalue);
     %     toggleobject([reportwin reportloss], 'off')
     
@@ -232,24 +192,24 @@ for p = 1:20 %20 trials within acquisition session
     Screen('Flip',wPtr);
     
     %ITI
-    ITI = randi([8,12]);
-    WaitSecs(ITI);
+%     ITI = randi([8,12]);  
+    WaitSecs(0.1);
     %     toggleobject(fix);
     %     idle(randi([8,12])*1000);
     %     toggleobject(fix);
 end
 
-% ALL REVERSAL #1 2, and 3 in one loop
+% REVERSAL #1 2, and 3 in one loop
 
-%In reversal 1, GCS must be taskobject 2 or 4
+% In reversal 1, GCS must be taskobject 2 or 4
 % if GCS == 1;
 %     GCS = 2;
 % end
-%
+% 
 % if rand(1) < 0.5
 %     GCS = 4; %The GCS will change spatial positioning on 50% of trials
 % end
-%
+% 
 % %Bad CS gets other number
 % BCS = 1; %BCS defaults to taskobject 1
 % if GCS == 4
@@ -262,18 +222,22 @@ for q = 21:95
     
     if fifty_prob >= 0.5
         GCS = 'on right'; %Taskobject 1 is the GCS
+        gcsLocation{q,1} = 'Right';
+        bcsLocation{q,1} = 'Left';
         img1 = BCS_image;
         img2 = GCS_image;
     end
     if fifty_prob < 0.5
         GCS = 'on left'; %The GCS will change spatial positioning on 50% of trials
+        gcsLocation{q,1} = 'Left';
+        bcsLocation{q,1} = 'Right';
         img1 = GCS_image;
         img2 = BCS_image;
     end
     
     
     %determine trial type
-    if rand(1) < prare
+    if rand(1) < 0.3
         trial = 1; %trial type set to rare
     end
     %if trial type not set to rare, it defaults to normal
@@ -290,26 +254,7 @@ for q = 21:95
     [nx, ny, bbox] = DrawFormattedText(wPtr, '+',  w/2, h/2-h/15, textcolor);
     Screen('TextSize',wPtr, font_size);
     [nx, ny, bbox] = DrawFormattedText(wPtr, 'Please make a choice', 'center', 85*h/100, textcolor);
-    Screen('Flip',wPtr);
-    
-    
-    %     toggleobject(fix);
-    %     toggleobject(GCS);
-    %     toggleobject (BCS);
-    %     toggleobject (choiceinstructions);
-    %     idle(2000); %instructions on screen for 2 seconds
-    %     toggleobject(fix); %fixation dot leaves screen
-    %     toggleobject (choiceinstructions); %instructions leave screen
-    %     hotkey(z, selected == left) && hotkey(m, selected == right); %defines possible keyboard strokes
-    %     idle(stimtime); %wait for participant?s choice
-    %     clear hotkey %participant cannot choose after stimtime IMPORTANT NOTE: if participant selects button immediately, it still takes "stimtime" for outcome to appear
-    %
-    %     %check for errors
-    %     if selected == 0
-    %         then %WHAT HAPPENS DURING TRIAL ERROR?
-    %     end
-    %     %SHOULD AN ERROR OCCUR IF BOTH KEYS ARE PRESSED OR DEFAULT TO LAST SELECTED
-    %     %KEY?
+    startTime = Screen('Flip',wPtr);
     
     
     while 1
@@ -321,6 +266,7 @@ for q = 21:95
         end
         if keyCode(left_key)
             selected = 1;
+            reactionTime{q,1} = secs - startTime;
             Screen('DrawTexture', wPtr, t1, [], [w/2-300*w/1000, h/2-h/25-y/2, w/2-300*w/1000+x, h/2-h/25+y/2]);
             Screen('DrawTexture', wPtr, t2, [], [w/2+300*w/1000-x, h/2-h/25-y/2, w/2+300*w/1000, h/2-h/25+y/2]);
             Screen('TextSize',wPtr, font_size);
@@ -334,6 +280,7 @@ for q = 21:95
         end
         if keyCode(right_key)
             selected = 2;
+            reactionTime{q,1} = secs - startTime;
             Screen('DrawTexture', wPtr, t1, [], [w/2-300*w/1000, h/2-h/25-y/2, w/2-300*w/1000+x, h/2-h/25+y/2]);
             Screen('DrawTexture', wPtr, t2, [], [w/2+300*w/1000-x, h/2-h/25-y/2, w/2+300*w/1000, h/2-h/25+y/2]);
             Screen('TextSize',wPtr, font_size);
@@ -347,41 +294,21 @@ for q = 21:95
         end
     end
     
-    WaitSecs(2); %after 2 seconds, all stimuli leave screen
-    %check which key participant selected and position of stimuli to determine
-    %if good or bad stimulus was selected
-    %     if selected == left && GCS == 2
-    %         CS = bad;
-    %         toggleobject(leftselected); %box appears around selected stimulus
-    %     elseif selected == left && GCS == 4
-    %         CS = good;
-    %         toggleobject(leftselected);
-    %     elseif selected == right && GCS == 2
-    %         CS = good;
-    %         toggleobject(rightselected);
-    %     elseif selected == right && GCS == 4
-    %         CS = bad;
-    %         toggleobject(rightselected);
-    %     end
+    WaitSecs(0.1); %after 2 seconds, all stimuli leave screen
     
-    
-    if (q >=21 && q <= 45) || (q >= 71 && q <= 95)  % for reversal 1 and 3
+    if (q >=21 && q <= 45) || (q >= 71 && q <= 95)  % for reversal 1 and 3, good stimulus is reinforced with the bad stimulus' probabilities
         if selected == 1 && strcmp(GCS,'on left')
-            CS = 'bad';
+            CS = 'bad';   
             key_pressed{q,1} = 'leftselected';
-            %         toggleobject(leftselected); %box appears around selected stimulus
         elseif selected == 1 && strcmp(GCS,'on right')
-            CS = 'good';
+            CS = 'good';   % here 'good' CS means that subejct had selected 'BCS'(bad choice).
             key_pressed{q,1} = 'leftselected';
-            %         toggleobject(leftselected);
         elseif selected == 2 && strcmp(GCS,'on left')
             CS = 'good';
             key_pressed{q,1} = 'rightselected';
-            %         toggleobject(rightselected);
         elseif selected == 2 && strcmp(GCS,'on right')
             CS = 'bad';
             key_pressed{q,1} = 'rightselected';
-            %         toggleobject(rightselected);
         end
     end
     
@@ -389,25 +316,21 @@ for q = 21:95
         if selected == 1 && strcmp(GCS,'on left')
             CS = 'good';
             key_pressed{q,1} = 'leftselected';
-            %         toggleobject(leftselected); %box appears around selected stimulus
         elseif selected == 1 && strcmp(GCS,'on right')
             CS = 'bad';
             key_pressed{q,1} = 'leftselected';
-            %         toggleobject(leftselected);
         elseif selected == 2 && strcmp(GCS,'on left')
             CS = 'bad';
             key_pressed{q,1} = 'rightselected';
-            %         toggleobject(rightselected);
         elseif selected == 2 && strcmp(GCS,'on right')
             CS = 'good';
             key_pressed{q,1} = 'rightselected';
-            %         toggleobject(rightselected);
         end
     end
     
     %check which stimulus is selected and the trial type (normal or rare) to
     %determine if the trial will result in a win or loss
-    if strcmp(CS, 'good') && trial == 0
+    if strcmp(CS, 'good') && trial == 0  
         run = 'win';
         TrialType{q,1} = 'normal';
         %         TrialRecord.TrialType(end+1)=1; %makes a note of whether trial is a win or loss
@@ -462,27 +385,25 @@ for q = 21:95
     %     toggleobject(rewardval); %presents the reward value (or loss value) to the participant
     %     TrialRecord.RewardValue(end+1)=rewardval; %makes a note of the reward value for the experimenter
     
-    WaitSecs(2); %everything leaves screen after 2 seconds
+    WaitSecs(0.1); %everything leaves screen after 2 seconds 
     Screen('TextSize',wPtr, font_size);
     Screen('TextStyle',wPtr, 1);
     [nx, ny, bbox] = DrawFormattedText(wPtr, '+',  w/2, h/2-h/15, textcolor);
     Screen('Flip',wPtr);
     %ITI
-    ITI = randi([8,12]);
-    WaitSecs(ITI);
-    %     toggleobject(fix);
-    %     idle(randi([8,12])*1000);
-    %     toggleobject(fix);
+%     ITI = randi([8,12]); 
+    WaitSecs(0.1);
+
 end
 
-%
+
 Screen('TextSize',wPtr, font_size);
 [nx, ny, bbox] = DrawFormattedText(wPtr, 'You have completed the experiment, Thank you for participanting', 'center', h/2-h/15, textcolor);
 Screen('Flip',wPtr);
 
 
-header = {'KEY_PRESSED', 'TRIAL_TYPE', 'REWARD_VALUE'};
-combined_table = horzcat(key_pressed, TrialType, RewardValue);
+header = {'REACTION_TIME', 'GCS_LOCATION', 'BCS_LOCATION', 'KEY_PRESSED', 'TRIAL_TYPE', 'REWARD_VALUE'};
+combined_table = horzcat(reactionTime, gcsLocation, bcsLocation, key_pressed, TrialType, RewardValue);
 TrialRecord = [header; combined_table];
 folder = './result';
 save([folder '/result.mat'], 'TrialRecord');
